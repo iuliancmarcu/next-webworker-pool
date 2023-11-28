@@ -1,4 +1,4 @@
-import { Task, TaskId, TaskScheduler } from './TaskScheduler';
+import { Task, TaskId, TaskExecutor } from './TaskExecutor';
 
 /**
  * Represents a pool of web workers that can execute tasks asynchronously.
@@ -11,7 +11,7 @@ export abstract class WebWorkerPool<
     I,
     O,
     E extends Error = Error,
-> extends TaskScheduler<I, O, E> {
+> extends TaskExecutor<I, O, E> {
     /** Holds the workers in the pool */
     private readonly _workers: Worker[] = [];
 
@@ -42,26 +42,28 @@ export abstract class WebWorkerPool<
      * in the form of `new Worker(new URL(<workerPath>, import.meta.url))`, meaning
      * that we cannot just pass the worker path as a string in the constructor.
      */
-    protected abstract createWorker(): Worker;
+    protected abstract _createWorker(): Worker;
 
     /**
-     * Schedules the next task to be executed by a worker.
-     * If a worker is available, the next task in the queue is assigned to the worker and executed.
-     * If no worker is available, the task will be scheduled when a worker becomes available.
+     * Tries to run a task inside a free worker.
      *
-     * @override This method is called by the base class when a new task is enqueued.
+     * If a worker is available, the task is assigned to the worker and executed.
+     * If no worker is available, the task will be re-scheduled later on.
+     *
+     * @returns True if a task was scheduled, false otherwise.
+     * @override This method is called by the base class when a task is scheduled to run.
      */
-    protected scheduleTask() {
+    protected _runTask(task: Task<I>): boolean {
         const worker = this._nextFreeWorker();
 
         if (worker) {
-            const task = this._taskQueue.shift();
+            this._workerTask.set(worker, task.id);
+            worker.postMessage(task);
 
-            if (task) {
-                this._workerTask.set(worker, task.id);
-                worker.postMessage(task);
-            }
+            return true;
         }
+
+        return false;
     }
 
     /**
@@ -72,16 +74,21 @@ export abstract class WebWorkerPool<
      * @param taskId The ID of the task to cancel.
      * @override This method is called by the base class when a task is cancelled.
      */
-    public cancelTask(taskId: TaskId): void {
-        super.cancelTask(taskId);
+    public cancelTask(taskId: TaskId, error?: E): void {
+        super.cancelTask(taskId, error);
+
+        const executingWorker = this._workers.find(
+            (w) => this._workerTask.get(w) === taskId,
+        ) as Worker;
 
         // If the task is currently executed by a worker, replace the worker
-        this._replaceWorker(
-            this._workers.find(
-                (w) => this._workerTask.get(w) === taskId,
-            ) as Worker,
-            new Error('Task cancelled by user.') as E,
-        );
+        if (executingWorker) {
+            this._replaceWorker(
+                this._workers.find(
+                    (w) => this._workerTask.get(w) === taskId,
+                ) as Worker,
+            );
+        }
     }
 
     /**
@@ -97,7 +104,7 @@ export abstract class WebWorkerPool<
      * @returns The new worker.
      */
     private _newBindedWorker(): Worker {
-        const worker = this.createWorker();
+        const worker = this._createWorker();
 
         worker.addEventListener(
             'message',
@@ -124,18 +131,10 @@ export abstract class WebWorkerPool<
             );
         }
 
-        const resultHandler = this._resultHandlers.get(data.id);
-
-        if (resultHandler) {
-            resultHandler(data);
-        }
-
-        // Remove the result handler and the current worker task id.
-        this._resultHandlers.delete(data.id);
+        // Unassign the worker from the task.
         this._workerTask.delete(worker as Worker);
 
-        // Schedule the next task for the worker.
-        this.scheduleTask();
+        this._handleTaskResult(data);
     }
 
     /**
@@ -147,11 +146,15 @@ export abstract class WebWorkerPool<
     private _handleWorkerError(event: ErrorEvent) {
         const { target: worker, error } = event;
 
-        // Replace the worker with a new one.
-        this._replaceWorker(worker as Worker, error);
+        const processingTaskId = this._workerTask.get(worker as Worker);
 
-        // Schedule the next task for the worker.
-        this.scheduleTask();
+        if (processingTaskId) {
+            // If the task is currently being executed by the worker, cancel it.
+            this.cancelTask(processingTaskId, error as E);
+        } else {
+            // Otherwise, just replace the worker with a new one.
+            this._replaceWorker(worker as Worker);
+        }
     }
 
     /**
@@ -160,7 +163,7 @@ export abstract class WebWorkerPool<
      * @param worker - The worker to be replaced.
      * @param error - Optional error to be passed to the result handler of pending tasks.
      */
-    private _replaceWorker(worker: Worker, error?: E) {
+    private _replaceWorker(worker: Worker) {
         const workerIndex = this._workers.indexOf(worker);
 
         // If the worker is not in the pool, there is nothing to do.
@@ -173,27 +176,9 @@ export abstract class WebWorkerPool<
         this._workers.push(this._newBindedWorker());
 
         // If the worker had no task assigned, there is nothing to do.
-        if (!this._workerTask.has(worker)) {
-            return;
+        if (this._workerTask.has(worker)) {
+            this._workerTask.delete(worker);
         }
-
-        // Otherwise, execute the reject callback for the task assigned to the worker.
-        const taskId = this._workerTask.get(worker) as TaskId;
-        const resultHandler = this._resultHandlers.get(taskId);
-
-        if (resultHandler) {
-            const resultError =
-                error ||
-                new Error('Task cancelled because of worker replacement');
-
-            resultHandler({
-                id: taskId,
-                error: resultError as E,
-            });
-        }
-
-        this._resultHandlers.delete(taskId);
-        this._workerTask.delete(worker);
     }
 
     /**
