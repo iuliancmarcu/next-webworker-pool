@@ -1,6 +1,5 @@
 {
     "name": "next-webworker-pool",
-    "private": true,
     "version": "0.0.1",
     "author": "Iulian-Constantin Marcu",
     "description": "A NPM package that enables developers to build Web Worker pools that can be used in (but not limited to) Next.js applications",
