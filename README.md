@@ -53,7 +53,7 @@ import { WebWorkerPool } from 'next-webworker-pool';
 import type { MyInput, MyOutput } from './my-worker';
 
 export class MyWorkerPool extends WebWorkerPool<MyInput, MyOutput> {
-    createWorker(): Worker {
+    _createWorker(): Worker {
         return new Worker(new URL('./my-worker.ts', import.meta.url));
     }
 }
