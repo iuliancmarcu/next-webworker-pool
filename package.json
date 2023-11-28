@@ -1,0 +1,53 @@
+{
+    "name": "next-webworker-pool",
+    "private": true,
+    "version": "0.0.1",
+    "author": "Iulian-Constantin Marcu",
+    "description": "A NPM package that enables developers to build Web Worker pools that can be used in (but not limited to) Next.js applications",
+    "license": "MIT",
+    "keywords": [
+        "next.js",
+        "webworker",
+        "pool",
+        "thread",
+        "worker",
+        "async"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/iuliancmarcu/next-webworker-pool.git"
+    },
+    "bugs": {
+        "url": "https://github.com/iuliancmarcu/next-webworker-pool/issues"
+    },
+    "type": "module",
+    "main": "./dist/next-webworker-pool.umd.cjs",
+    "module": "./dist/next-webworker-pool.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": "./dist/next-webworker-pool.js",
+            "require": "./dist/next-webworker-pool.umd.cjs"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc && vite build",
+        "test": "vitest"
+    },
+    "devDependencies": {
+        "@types/node": "^20.10.0",
+        "@typescript-eslint/eslint-plugin": "^6.13.1",
+        "@typescript-eslint/parser": "^6.13.1",
+        "eslint": "^8.54.0",
+        "eslint-config-prettier": "^9.0.0",
+        "eslint-plugin-prettier": "^5.0.1",
+        "prettier": "3.1.0",
+        "typescript": "^5.2.2",
+        "vite": "^5.0.0",
+        "vite-plugin-dts": "^3.6.3",
+        "vitest": "^0.34.6"
+    }
+}

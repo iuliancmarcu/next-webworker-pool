@@ -1,0 +1,1 @@
+export { WebWorkerPool } from './WebWorkerPool';
