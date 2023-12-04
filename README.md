@@ -39,12 +39,60 @@ function runTask(
 }
 ```
 
-### 2. Create a Web Worker pool by extending the `WebWorkerPool` class
+### 2. Create a Web Worker pool by extending the `WebWorkerPool` class or use the factory function
 
 This is a class that is responsible for creating Web Workers from a specific source, and running tasks on them.
 
 This pattern is used, because Next.js scans the source code for `new Worker(new URL(...))` calls, and replaces
 them with the Next.js custom bundling implementation.
+
+#### Using the factory function
+
+```typescript
+// my-worker-pool.ts
+import { createWebWorkerPool } from 'next-webworker-pool';
+
+import type { MyInput, MyOutput } from './my-worker';
+
+export const myWorkerPool = createWebWorkerPool<MyInput, MyOutput>(
+    new URL('./my-worker.ts', import.meta.url),
+    { maxWorkers: 4 },
+);
+```
+
+The worker pool can then be used directly in your Next.js application:
+
+```typescript
+// pages/index.tsx
+
+import { myWorkerPool } from '../my-worker-pool';
+
+export default function Home() {
+    const [result, setResult] = useState<number | null>(null);
+
+    useEffect(() => {
+        const task = myWorkerPool.executeTask(1); // run the task with input 1
+
+        // wait for the task to finish and use the result
+        task.promise
+            .then((result) => {
+                setResult(result);
+            })
+            .catch((error) => {
+                console.error(error);
+            });
+
+        return () => {
+            // terminate the Web Worker pool when the component is unmounted
+            myWorkerPool.terminate();
+        };
+    }, []);
+
+    return <div>{result}</div>;
+}
+```
+
+#### Extending the `WebWorkerPool` class
 
 ```typescript
 // my-worker-pool.ts
@@ -58,8 +106,6 @@ export class MyWorkerPool extends WebWorkerPool<MyInput, MyOutput> {
     }
 }
 ```
-
-### 3. Use the Web Worker pool in your Next.js application
 
 To use the Web Worker pool, you need to create an instance of it, and call the `run` method with the input data.
 
