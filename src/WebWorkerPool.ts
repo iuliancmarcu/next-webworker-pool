@@ -96,6 +96,7 @@ export abstract class WebWorkerPool<
      */
     public terminate() {
         this._workers.forEach((worker) => worker.terminate());
+        this._workers.splice(0, this._workers.length);
     }
 
     /**
@@ -187,11 +188,7 @@ export abstract class WebWorkerPool<
      *
      * @returns The next available worker, or undefined if no worker is available.
      */
-    private _nextFreeWorker(): Worker {
-        const worker = this._workers.find(
-            (w) => !this._workerTask.has(w) && w,
-        ) as Worker;
-
-        return worker;
+    private _nextFreeWorker() {
+        return this._workers.find((w) => !this._workerTask.has(w));
     }
 }
