@@ -10,8 +10,8 @@ export default defineConfig({
     build: {
         lib: {
             entry: resolve(__dirname, 'src/index.ts'),
-            name: 'next-webworker-pool',
-            fileName: 'next-webworker-pool',
+            name: 'index',
+            fileName: 'index',
         },
     },
     plugins: [dts()],
