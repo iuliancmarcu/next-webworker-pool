@@ -4,6 +4,10 @@
 
 A no-dependency package that enables developers to build Web Worker pools for Next.js applications.
 
+## Example
+
+You can find an example Next.js project using `next-webworker-pool` [here](https://stackblitz.com/edit/next-webworker-pool-example?file=app%2Fpage.tsx).
+
 ## Installation
 
 ```bash
