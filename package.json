@@ -1,6 +1,6 @@
 {
     "name": "next-webworker-pool",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "author": "Iulian-Constantin Marcu",
     "description": "A NPM package that enables developers to build Web Worker pools that can be used in (but not limited to) Next.js applications",
     "license": "MIT",
@@ -20,13 +20,14 @@
         "url": "https://github.com/iuliancmarcu/next-webworker-pool/issues"
     },
     "type": "module",
-    "main": "./dist/next-webworker-pool.umd.cjs",
-    "module": "./dist/next-webworker-pool.js",
+    "main": "./dist/index.umd.cjs",
+    "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "exports": {
         ".": {
-            "import": "./dist/next-webworker-pool.js",
-            "require": "./dist/next-webworker-pool.umd.cjs"
+            "import": "./dist/index.js",
+            "require": "./dist/index.umd.cjs",
+            "types": "./dist/index.d.ts"
         }
     },
     "files": [

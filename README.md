@@ -2,7 +2,7 @@
 
 [![.github/workflows/publish.yaml](https://github.com/iuliancmarcu/next-webworker-pool/actions/workflows/publish.yaml/badge.svg)](https://github.com/iuliancmarcu/next-webworker-pool/actions/workflows/publish.yaml)
 
-A NPM package that enables developers to build Web Worker pools for Next.js applications.
+A no-dependency package that enables developers to build Web Worker pools for Next.js applications.
 
 ## Installation
 
