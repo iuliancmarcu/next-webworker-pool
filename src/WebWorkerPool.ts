@@ -44,6 +44,33 @@ export abstract class WebWorkerPool<
      */
     protected abstract _createWorker(): Worker;
 
+    private _getTransferableData(data: I): Transferable[] {
+        // Look at the values inside the data object for transferable data
+        if (typeof data === 'object' && data !== null) {
+            return Object.values(data).flatMap((value) =>
+                this._getTransferableData(value),
+            );
+        }
+
+        if (data instanceof ArrayBuffer) {
+            return [data];
+        }
+
+        if (data instanceof MessagePort) {
+            return [data];
+        }
+
+        if (data instanceof ImageBitmap) {
+            return [data];
+        }
+
+        if (data instanceof OffscreenCanvas) {
+            return [data];
+        }
+
+        return [];
+    }
+
     /**
      * Tries to run a task inside a free worker.
      *
@@ -58,7 +85,9 @@ export abstract class WebWorkerPool<
 
         if (worker) {
             this._workerTask.set(worker, task.id);
-            worker.postMessage(task);
+
+            const transferableData = this._getTransferableData(task.data);
+            worker.postMessage(task, transferableData);
 
             return true;
         }
